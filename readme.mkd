@@ -1,0 +1,56 @@
+# Nginx auth yubico
+
+This is a server that works with nginx's [http_auth_request](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html) module to provide a way to authenticate users via [yubico's](https://www.yubico.com) yubikey otp validation server. This is meant to be used to verify access to an admin area of a website where only few people need access.
+
+## Status
+
+Currently it does work but still cleaning things up and want to ensure it's performant.
+
+## Architecture
+
+When the server receives a basic auth request, it verifies the yubikey id is listed in `yubikeys` option (Currently there isn't an "allow all" option yet). It then verifies the submitted yubikey otp is valid. If that checks out it sets a cookie named `authubico_sess` by default.
+
+During subsequent requests the server checks this session cookie. If it was last used within the number of seconds specified by `session_timeout` (default 300 or 5 minutes) then it updates the timestamp and allows request through.  If it doesn't then it goes through the yubikey validation steps again. The max recommended for this timeout is 86400 which is 24 hours.  The reason for this is most browsers now remember all cookies, including session cookies, between browser restarts, even if using https.
+
+## Setup
+
+### Auth yubico server
+
+- Setup a python virtualenv in however form you like and run `pip install -r requirements.txt`. If you plan to do development then use `requirements-dev.txt` instead.
+- Ensure you have a yubicloud api key. If you need one then fill out [this form](https://upgrade.yubico.com/getapikey/) to request one. It's free but does require you to have a yubikey.
+- Run `./auth_yubico.py --help` to get a list of all options available and their defaults
+- Copy `config-default.ini` to `config.ini` and make any changes. At a minimum enter your `yubico_api_id` and `yubico_api_key`. Also you should set `cookie_secret` to a random string. This is use to verify the cookie hasn't been tampered with. Run `fab secret` to generate a random string.
+- Run `start_server.sh` to get a server running in background
+
+### Nginx
+
+First run `nginx -V 2>&1 | grep with-http_auth_request`. If you get no results then your version of nginx doesn't have the `auth_request` module. Check your package manager for an `nginx-full` or `nginx-extras`. Then add something like the following to your server config.
+
+    location ~ ^/private/ {
+        auth_request @yubico-auth;
+        auth_request_set $setcookie $upstream_http_set_cookie;
+        auth_request_set $xyubikeyid $upstream_http_x_yubikey_id;
+        add_header Set-Cookie $setcookie;
+        add_header X-Yubikey-Id $xyubikeyid;
+    }
+
+    location = @yubico-auth {
+        # Important: proxy_pass address must have trailing /
+        proxy_pass http://127.0.0.1:5000/;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Request-Id $requestid;
+    }
+
+As you can see the server will return a `X-Yubikey-Id` header that contains the id of the yubikey that was validated.
+
+## Todo
+
+- add more tests
+- access based on username/yubikey (eg username 'alice' uses yubikey ids '1' and '2', username 'bob' uses just '3')
+- allow all validated yubikey users
+- allow password as well so the password field sent is a normal password plus yubikey otp
+- organize things better to make it easier to setup in pypi.
+- move default config and logs and such out of source and use the xdg directories where possible
