@@ -6,9 +6,9 @@ from __future__ import (division, absolute_import, print_function,
 import os
 import base64
 import logging
-import cPickle as pickle
 import time
 
+from six.moves import cPickle
 from tornado.ioloop import IOLoop
 from tornado.web import RequestHandler, Application, url
 from tornado.options import (define, options, parse_command_line,
@@ -93,7 +93,7 @@ class BaseRequestHandler(RequestHandler):
             "nonce": base64.b64encode(os.urandom(12)),
             "timestamp": time.time()
             }
-        self.set_secure_cookie(cookie_name, pickle.dumps(cookiedata))
+        self.set_secure_cookie(cookie_name, cPickle.dumps(cookiedata))
 
     def get_session_cookie(self, cookie_name=None):
         """Get the cookie data if exists.
@@ -111,7 +111,7 @@ class BaseRequestHandler(RequestHandler):
         if not self.get_secure_cookie(cookie_name):
             return None
         else:
-            return pickle.loads(self.get_secure_cookie(cookie_name))
+            return cPickle.loads(self.get_secure_cookie(cookie_name))
 
     def clear_session_cookie(self, cookie_name=None):
         """Clear session cookie
@@ -121,7 +121,7 @@ class BaseRequestHandler(RequestHandler):
         """
         if not cookie_name:
             cookie_name = options.session_cookie_name
-        self.set_secure_cookie(cookie_name, pickle.dumps({}))
+        self.set_secure_cookie(cookie_name, cPickle.dumps({}))
 
     def verify_yubikey(self, yubikey_otp):
         """Verify a given OTP is valid."""
@@ -205,10 +205,10 @@ if __name__ == "__main__":
         help="secret used for secure cookies")
     define(
         "debug", default=False, group="application", help="enable debug mode")
-    define("listen_address", default=b"127.0.0.1", help="listen address")
+    define("listen_address", default="127.0.0.1", help="listen address")
     define("listen_port", default=5000, help="listen port")
     define(
-        "session_cookie_name", default=b"authyubico_sess",
+        "session_cookie_name", default="authyubico_sess",
         help="name of session cookie")
     define(
         "session_timeout", default=3600,
@@ -217,10 +217,10 @@ if __name__ == "__main__":
         "yubikeys", multiple=True,
         help="comma-sepparated list of yubikey ids that are allowed")
     define(
-        "yubico_api_id", default=b"0",
+        "yubico_api_id", default="0",
         help="api id for yubico.com auth service")
     define(
-        "yubico_api_key", default=b"0",
+        "yubico_api_key", default="0",
         help="api key for yubico.com auth service")
     parse_command_line()
     logging.getLogger('requests').setLevel(logging.ERROR)
