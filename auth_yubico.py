@@ -57,8 +57,8 @@ def require_basic_auth(handler_class):
                 handler._transforms = []
                 handler.finish()
                 return False
-            auth_decoded = base64.decodestring(auth_header[6:])
-            kwargs['basicauth_user'], kwargs['basicauth_pass'] = auth_decoded.split(':', 2)
+            auth_decoded = base64.decodestring(auth_header[6:].encode())
+            kwargs['basicauth_user'], kwargs['basicauth_pass'] = auth_decoded.split(b':', 2)
             return True
 
         def _execute(self, transforms, *args, **kwargs):
@@ -93,7 +93,7 @@ class BaseRequestHandler(RequestHandler):
             "nonce": base64.b64encode(os.urandom(12)),
             "timestamp": time.time()
             }
-        self.set_secure_cookie(cookie_name, cPickle.dumps(cookiedata))
+        self.set_secure_cookie(cookie_name, cPickle.dumps(cookiedata, 0))
 
     def get_session_cookie(self, cookie_name=None):
         """Get the cookie data if exists.
@@ -121,7 +121,7 @@ class BaseRequestHandler(RequestHandler):
         """
         if not cookie_name:
             cookie_name = options.session_cookie_name
-        self.set_secure_cookie(cookie_name, cPickle.dumps({}))
+        self.set_secure_cookie(cookie_name, cPickle.dumps({}, 0))
 
     def verify_yubikey(self, yubikey_otp):
         """Verify a given OTP is valid."""
@@ -139,6 +139,7 @@ class BaseRequestHandler(RequestHandler):
                 result = False
             else:
                 self.set_header("X-Yubikey-Id", yubikey_id)
+                result = True
         return result
 
     def verify_session_cookie(self):
@@ -151,6 +152,7 @@ class BaseRequestHandler(RequestHandler):
                     result = True
                 else:
                     logging.info("expired session (age: %f)" % timedelta)
+                    result = False
             else:
                 logging.warn("session cookie missing timestamp param")
                 result = False
@@ -205,7 +207,8 @@ if __name__ == "__main__":
         help="secret used for secure cookies")
     define(
         "debug", default=False, group="application", help="enable debug mode")
-    define("listen_address", default="127.0.0.1", help="listen address")
+    define(
+        "listen_address", type=str, default="127.0.0.1", help="listen address")
     define("listen_port", default=5000, help="listen port")
     define(
         "session_cookie_name", default="authyubico_sess",
@@ -217,10 +220,10 @@ if __name__ == "__main__":
         "yubikeys", multiple=True,
         help="comma-sepparated list of yubikey ids that are allowed")
     define(
-        "yubico_api_id", default="0",
+        "yubico_api_id", type=str, default="0",
         help="api id for yubico.com auth service")
     define(
-        "yubico_api_key", default="0",
+        "yubico_api_key", type=str, default="0",
         help="api key for yubico.com auth service")
     parse_command_line()
     logging.getLogger('requests').setLevel(logging.ERROR)
