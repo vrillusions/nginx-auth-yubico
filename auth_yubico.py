@@ -33,10 +33,11 @@ def get_yubikey_id(otp):
     """Verify the OTP is in the correct format and return id.
 
     :param string otp: the one time password from yubikey
-    :return: 11 character yubikey id
+    :return: 12 character yubikey id
 
     """
     # TODO:2014-10-06:teddy: verify the string only contains modhex
+    # modhex = 'cbdefghijklnrtuv'
     if len(otp) != 44:
         raise NginxAuthYubicoError("not a valid yubikey otp")
     yubikey_id = otp[:12]

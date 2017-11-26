@@ -2,3 +2,4 @@
 /config.ini
 *.pid
 /.coverage
+/.python-version
