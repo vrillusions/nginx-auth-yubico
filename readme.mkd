@@ -1,4 +1,4 @@
-# Nginx auth yubico [![Build Status](https://travis-ci.org/vrillusions/nginx-auth-yubico.svg?branch=master)](https://travis-ci.org/vrillusions/nginx-auth-yubico) [![Code Issues](https://www.quantifiedcode.com/api/v1/project/d48e03ce302e4a709fee734b7eb8366e/badge.svg)](https://www.quantifiedcode.com/app/project/d48e03ce302e4a709fee734b7eb8366e)
+# Nginx auth yubico [![Build Status](https://travis-ci.org/vrillusions/nginx-auth-yubico.svg?branch=master)](https://travis-ci.org/vrillusions/nginx-auth-yubico)
 
 This is a server that works with nginx's [http_auth_request](http://nginx.org/en/docs/http/ngx_http_auth_request_module.html) module to provide a way to authenticate users via [yubico's](https://www.yubico.com) yubikey otp validation server. This is meant to be used to verify access to an admin area of a website where only few people need access.
 
