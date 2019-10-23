@@ -10,7 +10,7 @@ enum34==1.1.6
 Fabric==1.14.0
 idna==2.6
 ipaddress==1.0.18
-paramiko==1.18.4
+paramiko==2.0.9
 pyasn1==0.4.2
 pycparser==2.18
 pycrypto==2.6.1
